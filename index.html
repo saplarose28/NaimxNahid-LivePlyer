@@ -1,0 +1,355 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>NAIM X NAHID LIVE </title>
+
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/hls.js@latest"></script>
+
+<style>
+body{
+  margin:0;
+  background:#02090c;
+  color:#fff;
+  font-family:'Inter',sans-serif;
+}
+.header{
+  text-align:center;
+  padding:22px;
+  font-size:34px;
+  font-weight:800;
+  color:#ffdd00;
+  text-shadow:0 0 20px #ffdd00;
+}
+#listPage{
+  max-width:650px;
+  margin:auto;
+  padding:10px;
+}
+
+/* MATCH CARD */
+.match-card{
+  background:linear-gradient(135deg,#0f2027,#203a43,#2c5364);
+  border-radius:22px;
+  padding:18px;
+  margin:18px 0;
+  box-shadow:0 0 25px rgba(0,0,0,.6);
+  cursor:pointer;
+  position:relative;
+  transition:.3s;
+}
+.match-card:hover{transform:scale(1.03)}
+
+.card-row{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+}
+.flag{
+  width:56px;
+  border-radius:6px;
+}
+.match-info{
+  text-align:center;
+  flex:1;
+}
+.match-title{
+  font-size:26px;
+  font-weight:800;
+}
+.match-sub{
+  font-size:15px;
+  color:#ddd;
+}
+
+/* TIMER + LIVE */
+.timer{
+  font-size:22px;
+  font-weight:800;
+  margin-top:10px;
+}
+.live-center{
+  display:none;
+  text-align:center;
+  color:#ff2e2e;
+  font-size:20px;
+  font-weight:900;
+  margin-top:10px;
+}
+.live-dot{
+  display:inline-block;
+  width:10px;
+  height:10px;
+  background:#ff2e2e;
+  border-radius:50%;
+  margin-right:6px;
+  animation:pulse 1s infinite;
+}
+
+@keyframes pulse{
+  0%{transform:scale(1);opacity:1}
+  50%{transform:scale(1.4);opacity:.4}
+  100%{transform:scale(1);opacity:1}
+}
+
+/* PLAYER PAGE */
+#playerPage{
+  display:none;
+  position:fixed;
+  inset:0;
+  background:#000;
+  z-index:999;
+  padding:15px;
+  overflow:auto;
+}
+.back{
+  font-size:18px;
+  color:#00ffd5;
+  font-weight:700;
+  cursor:pointer;
+}
+.player-title{
+  text-align:center;
+  font-size:26px;
+  font-weight:800;
+  color:#ffdd00;
+  margin:10px 0;
+}
+video{
+  width:100%;
+  height:280px;
+  background:#000;
+  border-radius:18px;
+}
+.source-btn{
+  width:100%;
+  margin:10px 0;
+  padding:14px;
+  border:none;
+  border-radius:16px;
+  font-size:16px;
+  font-weight:800;
+  color:#fff;
+  cursor:pointer;
+  background:linear-gradient(90deg,#ff004c,#ffb300,#00e5ff,#ff004c);
+  background-size:300% 300%;
+  animation:rgb 6s linear infinite;
+}
+
+@keyframes rgb{
+  0%{background-position:0% 50%}
+  50%{background-position:100% 50%}
+  100%{background-position:0% 50%}
+}
+
+.controls{
+  display:flex;
+  gap:10px;
+  margin-top:10px;
+}
+.ctrl{
+  flex:1;
+  padding:12px;
+  border:none;
+  border-radius:14px;
+  font-weight:800;
+  cursor:pointer;
+}
+.play{background:#ff6a00;color:#fff}
+.pip{background:#111;color:#00ffd5}
+.share{background:#0088cc;color:#fff}
+
+.telegram{
+  position:fixed;
+  bottom:20px;
+  right:20px;
+  padding:15px 22px;
+  background:linear-gradient(90deg,#0088cc,#00f2ff);
+  color:#fff;
+  border-radius:28px;
+  font-weight:800;
+  text-decoration:none;
+  box-shadow:0 0 20px rgba(0,255,255,.6);
+}
+</style>
+</head>
+
+<body>
+
+<div class="header">MN X NAIM LIVE 🔴</div>
+<div id="listPage"></div>
+
+<!-- PLAYER -->
+<div id="playerPage">
+  <div class="back" onclick="goBack()">← Back</div>
+  <div class="player-title" id="playerTitle"></div>
+  <video id="video" controls playsinline></video>
+  <div id="sources"></div>
+  <div class="controls">
+    <button class="ctrl play" onclick="video.play()">▶ Play</button>
+    <button class="ctrl pip" onclick="pip()">⧉ PiP</button>
+    <button class="ctrl share" onclick="share()">↗ Share</button>
+  </div>
+</div>
+
+<a class="telegram" href="https://t.me/+EUu_2FFLJsdmMGU9" target="_blank">Join Telegram</a>
+
+<script>
+let hls;
+const video=document.getElementById("video");
+
+const matches=[
+{
+ title:"PAK vs AUS",
+ sub:"1st T20 • 5:00PM",
+ left:"https://flagcdn.com/w80/pk.png",
+ right:"https://flagcdn.com/w80/au.png",
+ start:"2026-01-29T17:00:00",
+ sources:[
+  {name:"FOX Sports 501",link:"https://allinonereborn.xyz/mix.m3u8/live4.php?id=197185"},
+  {name:"Cricbuzz 1",link:"https://allinonereborn.xyz/mix.m3u8/live4.php?id=303629"},
+  {name:"TNT Sports 1",link:"https://allinonereborn.xyz/mix.m3u8/live4.php?id=309615"},
+  {name:"Willow",link:"https://allinonereborn.xyz/mix.m3u8/live4.php?id=276740"}
+ ]
+},
+{
+ title:"RSA vs Wi",
+ sub:"2nd T20 • 10:00PM",
+ left:"https://flagcdn.com/w80/za.png",
+ right:"https://flagcdn.com/w80/vc.png",
+ start:"2026-01-29T22:00:00",
+ sources:[
+  {name:"FOX 501",link:"https://allinonereborn.xyz/mix.m3u8/live4.php?id=197185"},
+  {name:"Willo HD",link:"https://allinonereborn.xyz/mix.m3u8/live4.php?id=276740"},
+  {name:"TNT Sports 1",link:"https://allinonereborn.xyz/mix.m3u8/live4.php?id=309615"},
+  {name:"HOTSTR HINDI WORLDWIDE",link:"https://aps32.playlist.live-video.net/v1/playlist/CrgFliymjPMYoPQt0Mfnn6CIx9KNzZPqW3cZF2IOTzi0Ga1n5Nfig92jnC_5xYtcX-RsEjQLIOtsTpEQtzxOB4R_4bmFl-d9vYGN9FCcd0D8Nf7lZZs8NrJV5j_ViMzf81ow9S4IKnjux6QXM3rYNk5xY7bCyvRGfNAYye2jnEeTdeBKFWT7bRfGCJJ_8qp4Ru9btbt7vIih-Vlb6DO_1eu-EhzbwO1N5iEn0wpEbL1ZcSyXyoE3-ZY6zpOrFsJTGcDaLK7HWORLDWIDenUVJiaTyLgqlb5Kg-sNt21pHyTTdiv3SWS-upC1NKndtx3M7lmZE2LXbbKn7aAP4LOAa2OXNGDa2jvIZ4M4Yhl_8wMlKS_iJKHfGteYBARCDKUXwOLOgMyKiRzEt00PdkVifkRud4hpwkPh9aSWPKGOL5uvqBaTcFBaBkK_R2KU6N12fBkWwg9iWOoZ2_vKo7I8LmDfthxvicbaJhnzLSDaSAUmhq9zPZzDYOvC457l9UuN-zVjAqjlmWdh3NlGC_H8XIypxk35w1qzXhMMFlZjd96wc4q2u8O9_tPMrvHGeB0-KSs0nEVvQ466R8-a0iNCscItT8tF93qx7KFlhp8XbWn9okTatsAzwUG9GYpPqlRxElhwbUTwkFge_221cbk3l_dP4lnaAqLAIochELHLl_b1QxUlvTYrg-5t64ZrAj2jn3pCGF18-RS8OjiJsoXy3L70-7qp09Frs5b0EaIV8Mj6In8aWYPF3_cVruKD_COMDBdpQg967zX5iLJXMFSHLqI9reI11VQNSPTRe1Y51jmy-WPc0I5tFnX3sdYbZTVJsGXDzHUYpe_wzS1W_qBg0Uo82EiN7CrjqGHRco6lUOpWznIRysuDwVxaUOhOusG3LDU0xzZ14szPyVOTTXSTV73kGBqDomdq-s5GgwFRz-QAaLhsCY1FLAgASoJdXMtd2VzdC0yMKUO.m3u8"}
+ ]
+},
+{
+ title:"RSA vs SL",
+ sub:"U19 WC • 01:30 PM",
+ left:"https://flagcdn.com/w80/za.png",
+ right:"https://flagcdn.com/w80/lk.png",
+ start:"2026-01-29T13:30:00",
+ sources:[
+  {name:"Sky Sports Cricket ",link:"https://allinonereborn.xyz/mix.m3u8/live4.php?id=10526"},
+  {name:"Star Sports 2 ",link:"https://allinonereborn.xyz/mix.m3u8/live4.php?id=276735"},
+  {name:"CricLife",link:"https://allinonereborn.xyz/mix.m3u8/live4.php?id=303627"},
+  {name:"Willow 2",link:"https://allinonereborn.xyz/push4k/live2.php?u=aHR0cDovLzIwNi4xMjMuMTQwLjk0OjY0NDIzL0NGNUE2ODc1NERBQlpaWlpaNWQ0ODk5NzRhMmY0ZmYwOWUyNjkzN2ViN2Y0NGUzNi90cmFja3MtdjFhMS9tb25vLm0zdTg/dG9rZW49ZmZlZmE3M2EyY2YwYmRlZWYzMDBjOWEwMzZlYzczMDM="}
+ ]
+},
+{
+ title:"UAE vs IRE ",
+ sub:"1st T20•08:00PM",
+ left:"https://flagcdn.com/w80/ae.png",
+ right:"https://flagcdn.com/w80/ie.png",
+ start:"2026-01-29T20:00:00",
+ sources:[
+  {name:"Fancode ",link:"https://bd-mc-fdlive.fancode.com/mumbai/140132_english_hls_d21924d2cc77509_1ta-di_h264/1080p.m3u8"},
+  {name:"Sky Sports Cricket",link:"https://allinonereborn.xyz/mix.m3u8/live4.php?id=10527"},
+  {name:"TNT Sports 1",link:"https://allinonereborn.xyz/mix.m3u8/live4.php?id=309615"},
+  {name:"Willow",link:"https://allinonereborn.xyz/mix.m3u8/live4.php?id=276740"}
+ ]
+},
+{
+ title:"SL vs ENG",
+ sub:"1ST T20•07:30PM",
+ left:"https://flagcdn.com/w80/lk.png",
+ right:"https://flagcdn.com/w80/gb.png",
+ start:"2026-01-30T19:30:00",
+ sources:[
+  {name:"FOX 501",link:"https://allinonereborn.xyz/mix.m3u8/live4.php?id=197185"},
+  {name:"Sky Sports Cricket",link:"https://allinonereborn.xyz/mix.m3u8/live4.php?id=10527"},
+  {name:"TNT Sports 1",link:"https://allinonereborn.xyz/mix.m3u8/live4.php?id=309615"},
+  {name:"Willow",link:"https://allinonereborn.xyz/mix.m3u8/live4.php?id=276740"}
+ ]
+}
+];
+
+const list=document.getElementById("listPage");
+
+matches.forEach(m=>{
+ const card=document.createElement("div");
+ card.className="match-card";
+
+ card.innerHTML=`
+  <div class="card-row">
+    <img class="flag" src="${m.left}">
+    <div class="match-info">
+      <div class="match-title">${m.title}</div>
+      <div class="match-sub">${m.sub}</div>
+      <div class="timer">00:00:00</div>
+      <div class="live-center"><span class="live-dot"></span>LIVE</div>
+    </div>
+    <img class="flag" src="${m.right}">
+  </div>
+ `;
+ list.appendChild(card);
+
+ const timer=card.querySelector(".timer");
+ const live=card.querySelector(".live-center");
+ const start=new Date(m.start);
+
+ setInterval(()=>{
+  const diff=start-new Date();
+  if(diff<=0){
+    timer.innerText="LIVE";
+    live.style.display="block";
+  }else{
+    const h=Math.floor(diff/36e5);
+    const mi=Math.floor((diff%36e5)/6e4);
+    const s=Math.floor((diff%6e4)/1000);
+    timer.innerText=
+      `${String(h).padStart(2,'0')}:${String(mi).padStart(2,'0')}:${String(s).padStart(2,'0')}`;
+  }
+ },1000);
+
+ card.onclick=()=>openMatch(m);
+});
+
+function openMatch(m){
+ list.style.display="none";
+ playerPage.style.display="block";
+ playerTitle.innerText=m.title+" • "+m.sub;
+ sources.innerHTML="";
+ m.sources.forEach(s=>{
+  const b=document.createElement("button");
+  b.className="source-btn";
+  b.innerText=s.name;
+  b.onclick=()=>load(s.link);
+  sources.appendChild(b);
+ });
+ load(m.sources[0].link);
+}
+
+function load(url){
+ if(hls)hls.destroy();
+ if(Hls.isSupported()){
+  hls=new Hls();
+  hls.loadSource(url);
+  hls.attachMedia(video);
+  hls.on(Hls.Events.MANIFEST_PARSED,()=>video.play
+  );
+ }else{
+  video.src=url;
+  video.play();
+ }
+}
+
+function goBack(){
+ video.pause();
+ playerPage.style.display="none";
+ list.style.display="block";
+}
+function pip(){
+ document.pictureInPictureElement?document.exitPictureInPicture():video.requestPictureInPicture();
+}
+function share(){
+ navigator.share?navigator.share({text:"MN X NAIM LIVE 🔴"}):alert("MN X NAIM LIVE 🔴");
+}
+</script>
+
+</body>
+</html>
